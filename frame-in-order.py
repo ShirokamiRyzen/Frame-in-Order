@@ -47,7 +47,7 @@ url = "https://graph.facebook.com/v5.0/me/photos"
 x = frame_start
 y = loopvalue
 for i in range(x, x+y):
-        time.sleep(3)
+        time.sleep(60)
         num = (f"{i:0>4}")
         image_source = (f"./frames/{num}.png")
         caption = (f"Charlotte Episode 1 [Frame {num}/1440]")
