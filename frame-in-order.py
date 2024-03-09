@@ -11,9 +11,23 @@ import time
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(1))
 urllib3.disable_warnings()
 
+# Menghitung jumlah file di direktori frames
+frame_loop = len([name for name in os.listdir('frames') if os.path.isfile(os.path.join('frames', name))])
+
+# Ambil semua nama file dalam direktori frames
+file_names = os.listdir('frames')
+
+# Ekstrak nomor frame dari nama file dan simpan dalam daftar
+frame_numbers = [int(name.split('.')[0]) for name in file_names]
+
+# Ambil nilai maksimum dari daftar nomor frame
+frame_count = max(frame_numbers)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--start', metavar='123', type=int, help='First frame you want to upload')
-parser.add_argument('--loop', metavar='40', nargs='?', default=40, type=int, help='Loop value')
+
+# Mengubah nilai default loop
+parser.add_argument('--loop', metavar=str(frame_loop), nargs='?', default=frame_loop, type=int, help='Loop value')
 args = parser.parse_args()
 frame_start = args.start
 loopvalue = args.loop
@@ -42,15 +56,15 @@ elif frame_start == None:
 
 logging.basicConfig(level=logging.DEBUG)
 # User your access token
-ACCESS_TOKEN = 'EAAMXyTNig5EBO8ZBcwP9cUUhc2hZAJDqVTnDGauSmNJ4HHnJD6SJ0oAsappbI7vGyGCg7VSxOZBlyEFyPCYJ85IzTRzImHrI5jo506bZCvASDcjvwcsGqKKW259H2kDob5XgIOHz7yqBZCKv1VLtlZCnJZAdZCrRGiExkjBEFwz41fLndf9qNGtHzzcda6bS5ZCq187Rt8A29'
+ACCESS_TOKEN = 'EAAKwnSVZAOJoBOZCtJQsC7OZAODbZBPdP8tQRZCA2iP9rNU5DcIZA39SomU6UPiRaF5IjNubYe7y2rsTD98PDMFq0nWh1MWIjDwaEbAFtXkN9fOKseuS7npLuFYYCJ7U1Q0hwPa9JuwuErdLYqe0ZC5YGnmovscDy02ZCfxWBCgufZCOFPnnGraGaJyHVDezwWUuw57PklJcbb6Ju5MkZD'
 url = "https://graph.facebook.com/v5.0/me/photos"
 x = frame_start
 y = loopvalue
-for i in range(x, x+y):
-        time.sleep(60)
+for i in range(x, min(x + y, frame_count + 1)):
+        time.sleep(30)
         num = (f"{i:0>4}")
         image_source = (f"./frames/{num}.png")
-        caption = (f"Charlotte Episode 1 [Frame {num}/1440]")
+        caption = (f"Charlotte Episode 1 [Frame {num}/{frame_count}]")
         payload = {
                 'access_token' : ACCESS_TOKEN,
                 'caption': caption, 
