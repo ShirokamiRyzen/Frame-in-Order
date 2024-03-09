@@ -1,0 +1,9 @@
+//Requirement
+pip install -r requirements.txt
+
+//Setup
+mkdir frames
+ffmpeg -i 'Gotoubun-Episode4.mp4' -vf fps=1 ./frames/%04d.png -hide_banner
+
+//Run
+python3 frame-in-order.py --start 1 -loop 100
