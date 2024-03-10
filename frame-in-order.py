@@ -43,7 +43,6 @@ class color:
    bold = '\033[1m'
    underline = '\033[4m'
    reset = '\033[0m'
-   magenta = "\033[35m"
 
 if len(sys.argv)==1:
         parser.print_help(sys.stderr)
@@ -56,26 +55,29 @@ elif frame_start == None:
 
 logging.basicConfig(level=logging.DEBUG)
 # User your access token
-ACCESS_TOKEN = 'EAAKwnSVZAOJoBOZCtJQsC7OZAODbZBPdP8tQRZCA2iP9rNU5DcIZA39SomU6UPiRaF5IjNubYe7y2rsTD98PDMFq0nWh1MWIjDwaEbAFtXkN9fOKseuS7npLuFYYCJ7U1Q0hwPa9JuwuErdLYqe0ZC5YGnmovscDy02ZCfxWBCgufZCOFPnnGraGaJyHVDezwWUuw57PklJcbb6Ju5MkZD'
+ACCESS_TOKEN = ''
 url = "https://graph.facebook.com/v5.0/me/photos"
 x = frame_start
 y = loopvalue
+first_run = True  # Menandai apakah ini adalah run pertama atau tidak
 for i in range(x, min(x + y, frame_count + 1)):
-        time.sleep(30)
-        num = (f"{i:0>4}")
-        image_source = (f"./frames/{num}.png")
-        caption = (f"Charlotte Episode 1 [Frame {num}/{frame_count}]")
-        payload = {
-                'access_token' : ACCESS_TOKEN,
-                'caption': caption, 
-                'published' : 'true',
-        }
-        files = {'source': (image_source, open(image_source, 'rb'))}
-        r = requests.post(url, files=files, data=payload)
-        if r.status_code == 200:
-            logging.debug(f"{color.bold}{color.green}Frame {num} Uploaded{color.reset}. {r.json()}")
-            os.remove(f"{image_source}")
-        else:
-            logging.debug(f"{color.bold}{color.red}Failed to Upload Frame {num}{color.reset}. {r.json()}")
-            break
+    if not first_run:
+        time.sleep(60)  # Tunggu 60 detik setiap kali, kecuali run pertama
+    num = (f"{i:0>4}")
+    image_source = (f"./frames/{num}.png")
+    caption = (f"Charlotte Episode 1 [Frame {num}/{frame_count}]")
+    payload = {
+        'access_token' : ACCESS_TOKEN,
+        'caption': caption, 
+        'published' : 'true',
+    }
+    files = {'source': (image_source, open(image_source, 'rb'))}
+    r = requests.post(url, files=files, data=payload)
+    if r.status_code == 200:
+        logging.debug(f"{color.bold}{color.green}Frame {num} Uploaded{color.reset}. {r.json()}")
+        os.remove(f"{image_source}")
+    else:
+        logging.debug(f"{color.bold}{color.red}Failed to Upload Frame {num}{color.reset}. {r.json()}")
+        break
+    first_run = False  # Setelah run pertama, ubah menjadi False
 print(f"{color.bold}Task Done{color.reset}")
