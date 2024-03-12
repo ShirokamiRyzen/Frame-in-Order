@@ -7,6 +7,7 @@ import os
 import logging
 import argparse
 import time
+import random
 
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(1))
 urllib3.disable_warnings()
@@ -62,7 +63,8 @@ y = loopvalue
 first_run = True  # Menandai apakah ini adalah run pertama atau tidak
 for i in range(x, min(x + y, frame_count + 1)):
     if not first_run:
-        time.sleep(60)  # Tunggu 60 detik setiap kali, kecuali run pertama
+        delay = random.randint(30, 90)  # Tunggu waktu acak antara 30 hingga 90 detik setiap kali, kecuali run pertama
+        time.sleep(delay)
     num = (f"{i:0>4}")
     image_source = (f"./frames/{num}.png")
     caption = (f"Charlotte Episode 1 [Frame {num}/{frame_count}]")
