@@ -8,6 +8,7 @@ import argparse
 import time
 import random
 import json
+from PIL import Image
 
 urllib3.disable_warnings()
 
@@ -64,6 +65,61 @@ logging.basicConfig(level=logging.DEBUG)
 # Facebook Graph API URL
 url = "https://graph.facebook.com/v5.0/me/photos"
 
+def save_cropped_frame(image, crop_x, crop_y, crop_width, crop_height):
+    if not os.path.exists('crop_frames'):
+        os.makedirs('crop_frames')
+    
+    # Generate a new file path for the cropped image
+    file_name = f"crop_{crop_width}x{crop_height}_{os.path.basename(image.filename)}"
+    cropped_image_path = os.path.join('crop_frames', file_name)
+    
+    # Create and save the cropped image
+    cropped_image = image.crop((crop_x, crop_y, crop_x + crop_width, crop_y + crop_height))
+    cropped_image.save(cropped_image_path)
+    
+    return cropped_image_path
+
+def get_random_crop_coordinates(image):
+    # Determine the minimum and maximum crop size
+    min_crop_size = 350
+    max_crop_size = 480
+    
+    # Generate random crop dimensions
+    crop_width = random.randint(min_crop_size, max_crop_size)
+    crop_height = random.randint(min_crop_size, max_crop_size)
+    
+    # Generate random crop position
+    max_x = image.width - crop_width
+    max_y = image.height - crop_height
+    
+    crop_x = random.randint(0, max_x)
+    crop_y = random.randint(0, max_y)
+    
+    return crop_x, crop_y, crop_width, crop_height
+
+def random_crop_comment(post_id, image, crop_x, crop_y, crop_width, crop_height):
+    # Save the cropped image to the "crop_frames" folder
+    cropped_image_path = save_cropped_frame(image, crop_x, crop_y, crop_width, crop_height)
+
+    caption = f"Random Crop. [{crop_width}x{crop_height} ~ X: {crop_x}, Y: {crop_y}]"
+    
+    # Open the cropped image
+    with open(cropped_image_path, 'rb') as cropped_image_file:
+        files = {'source': cropped_image_file}
+        payload = {
+            'access_token': ACCESS_TOKEN,
+            'message': caption,
+        }
+        
+        r = requests.post(f"https://graph.facebook.com/v5.0/{post_id}/comments", files=files, data=payload)
+    
+    if r.status_code == 200:
+        logging.debug(f"\033[1m\033[92mRandom Crop Comment Uploaded\033[0m\033[0m. {r.json()}")
+        # Remove the cropped image after successfully posting
+        os.remove(cropped_image_path)
+    else:
+        logging.debug(f"\033[1m\033[91mFailed to Upload Random Crop Comment\033[0m\033[0m. {r.json()}")
+
 # Main loop for uploading frames
 x = args.start
 y = args.loop if args.loop else frame_loop
@@ -90,6 +146,19 @@ for i in range(x, min(x + y, frame_count + 1)):
     
     if r.status_code == 200:
         logging.debug(f"\033[1m\033[92mFrame {num} Uploaded\033[0m\033[0m. {r.json()}")
+        response_json = r.json()
+        post_id = response_json.get('post_id')
+        
+        # Open the image file
+        image = Image.open(image_source)
+        
+        # Get random crop coordinates
+        crop_x, crop_y, crop_width, crop_height = get_random_crop_coordinates(image)
+        
+        # Add random crop comment after uploading frame
+        random_crop_comment(post_id, image, crop_x, crop_y, crop_width, crop_height)
+
+        image.close()
         os.remove(image_source)
     else:
         logging.debug(f"\033[1m\033[91mFailed to Upload Frame {num}\033[0m\033[0m. {r.json()}")
