@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 import requests
 import urllib3
 import signal
@@ -8,78 +7,94 @@ import logging
 import argparse
 import time
 import random
+import json
 
-signal.signal(signal.SIGINT, lambda x, y: sys.exit(1))
 urllib3.disable_warnings()
 
-# Menghitung jumlah file di direktori frames
-frame_loop = len([name for name in os.listdir('frames') if os.path.isfile(os.path.join('frames', name))])
+# Load configuration from external file
+def load_config(filename):
+    with open(filename, 'r') as file:
+        config = json.load(file)
+    return config
 
-# Ambil semua nama file dalam direktori frames
-file_names = os.listdir('frames')
+# Function to check if config.json exists
+def config_exists():
+    return os.path.isfile("config.json")
 
-# Ekstrak nomor frame dari nama file dan simpan dalam daftar
-frame_numbers = [int(name.split('.')[0]) for name in file_names]
+# Signal handler
+signal.signal(signal.SIGINT, lambda x, y: sys.exit(1))
 
-# Ambil nilai maksimum dari daftar nomor frame
-frame_count = max(frame_numbers)
-
+# Command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--start', metavar='123', type=int, help='First frame you want to upload')
-
-# Mengubah nilai default loop
-parser.add_argument('--loop', metavar=str(frame_loop), nargs='?', default=frame_loop, type=int, help='Loop value')
+parser.add_argument('--loop', metavar='n', type=int, help='Loop value')
 args = parser.parse_args()
-frame_start = args.start
-loopvalue = args.loop
 
-class color:
-   purple = '\033[95m'
-   cyan = '\033[96m'
-   darkcyan = '\033[36m'
-   blue = '\033[94m'
-   green = '\033[92m'
-   yellow = '\033[93m'
-   red = '\033[91m'
-   bold = '\033[1m'
-   underline = '\033[4m'
-   reset = '\033[0m'
+# Load configuration from file if config.json exists
+if config_exists():
+    config = load_config("config.json")
+else:
+    print("Configuration file 'config.json' is required.")
+    sys.exit(1)
 
-if len(sys.argv)==1:
-        parser.print_help(sys.stderr)
-        sys.exit(1)
-elif frame_start == None:
-        parser.print_help(sys.stderr)
-        print()
-        print(f"{color.red}{color.bold}Error! First frame value is mandatory{color.reset}{color.reset}")
-        sys.exit(1)
+# Initialize variables from configuration
+ACCESS_TOKEN = config.get('ACCESS_TOKEN', '')
+MIN_DELAY = config.get('MIN_DELAY', 180)
+MAX_DELAY = config.get('MAX_DELAY', 240)
+TITLE_EPS = config.get('TITLE_EPS', '')
 
+# Set default loop value
+frame_loop = len([name for name in os.listdir('frames') if os.path.isfile(os.path.join('frames', name))])
+
+# Extract frame numbers from file names
+file_names = os.listdir('frames')
+frame_numbers = [int(name.split('.')[0]) for name in file_names]
+frame_count = max(frame_numbers)
+
+# Validate command line arguments
+if len(sys.argv)==1 or args.start is None:
+    parser.print_help(sys.stderr)
+    print()
+    print("\033[91m\033[1mError! First frame value is mandatory\033[0m\033[0m")
+    sys.exit(1)
+
+# Initialize logging
 logging.basicConfig(level=logging.DEBUG)
-# User your access token
-ACCESS_TOKEN = ''
+
+# Facebook Graph API URL
 url = "https://graph.facebook.com/v5.0/me/photos"
-x = frame_start
-y = loopvalue
-first_run = True  # Menandai apakah ini adalah run pertama atau tidak
+
+# Main loop for uploading frames
+x = args.start
+y = args.loop if args.loop else frame_loop
+first_run = True
+
+# Iterate through frames
 for i in range(x, min(x + y, frame_count + 1)):
     if not first_run:
-        delay = random.randint(30, 90)  # Tunggu waktu acak antara 30 hingga 90 detik setiap kali, kecuali run pertama
+        delay = random.randint(MIN_DELAY, MAX_DELAY)
         time.sleep(delay)
-    num = (f"{i:0>4}")
-    image_source = (f"./frames/{num}.png")
-    caption = (f"Charlotte Episode 1 [Frame {num}/{frame_count}]")
+    
+    num = f"{i:0>4}"
+    image_source = f"./frames/{num}.png"
+    caption = f"{TITLE_EPS} [Frame {num}/{frame_count}]"
+    
     payload = {
         'access_token' : ACCESS_TOKEN,
         'caption': caption, 
         'published' : 'true',
     }
+    
     files = {'source': (image_source, open(image_source, 'rb'))}
     r = requests.post(url, files=files, data=payload)
+    
     if r.status_code == 200:
-        logging.debug(f"{color.bold}{color.green}Frame {num} Uploaded{color.reset}. {r.json()}")
-        os.remove(f"{image_source}")
+        logging.debug(f"\033[1m\033[92mFrame {num} Uploaded\033[0m\033[0m. {r.json()}")
+        os.remove(image_source)
     else:
-        logging.debug(f"{color.bold}{color.red}Failed to Upload Frame {num}{color.reset}. {r.json()}")
+        logging.debug(f"\033[1m\033[91mFailed to Upload Frame {num}\033[0m\033[0m. {r.json()}")
         break
-    first_run = False  # Setelah run pertama, ubah menjadi False
-print(f"{color.bold}Task Done{color.reset}")
+    
+    first_run = False
+
+print("\033[1mTask Done\033[0m")
