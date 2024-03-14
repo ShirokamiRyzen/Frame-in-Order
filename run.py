@@ -84,9 +84,11 @@ def get_random_crop_coordinates(image):
     min_crop_size = 350
     max_crop_size = 480
     
-    # Generate random crop dimensions
+    # Generate random crop width
     crop_width = random.randint(min_crop_size, max_crop_size)
-    crop_height = random.randint(min_crop_size, max_crop_size)
+    
+    # Make crop height equal to crop width for 1:1 aspect ratio
+    crop_height = crop_width
     
     # Generate random crop position
     max_x = image.width - crop_width
@@ -101,7 +103,7 @@ def random_crop_comment(post_id, image, crop_x, crop_y, crop_width, crop_height)
     # Save the cropped image to the "crop_frames" folder
     cropped_image_path = save_cropped_frame(image, crop_x, crop_y, crop_width, crop_height)
 
-    caption = f"Random Crop. [{crop_width}x{crop_height} ~ X: {crop_x}, Y: {crop_y}]"
+    caption = f"Random Crop. [{crop_width}x{crop_height} ~ X: {crop_x}, Y: {crop_y}"
     
     # Open the cropped image
     with open(cropped_image_path, 'rb') as cropped_image_file:
@@ -133,7 +135,7 @@ for i in range(x, min(x + y, frame_count + 1)):
     
     num = f"{i:0>4}"
     image_source = f"./frames/{num}.png"
-    caption = f"{TITLE_EPS} [Frame {num}/{frame_count}]"
+    caption = f"{TITLE_EPS}, Frame {num} out of {frame_count}]"
     
     payload = {
         'access_token' : ACCESS_TOKEN,
