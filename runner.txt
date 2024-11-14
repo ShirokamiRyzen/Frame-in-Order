@@ -8,6 +8,10 @@ ffmpeg -i 'videos/charlotte_episode1.mp4' -vf fps=1 ./frames/%04d.png -hide_bann
 //Run
 python3 frame-in-order.py --start 1 --loop 100
 
+python3 run.py --start 1 --loop 1441
+
+pm2 start run.py -- --start 1 --loop 1441
+
 Or
 
 python3 frame-in-order.py --start 1
